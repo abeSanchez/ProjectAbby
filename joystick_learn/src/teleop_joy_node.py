@@ -18,6 +18,10 @@ class TeleopJoyNode:
     joy_sub = None
     last_twist = Twist()
 
+    def __init__(self):
+        self.twist_pub = rospy.Publisher('turtle1/cmd_vel', Twist, queue_size=1)
+        self.joy_sub = rospy.Subscriber('joy', Joy, self.joy_callback)
+
     def publish(self):
         while not rospy.is_shutdown():
             self.twist_pub.publish(self.last_twist)
@@ -39,9 +43,8 @@ class TeleopJoyNode:
 
 if __name__ == '__main__':
     rospy.init_node('teleop_joystick', log_level=rospy.DEBUG)
+
     node = TeleopJoyNode()
-    node.twist_pub = rospy.Publisher('turtle1/cmd_vel', Twist, queue_size=1)
-    node.joy_sub = rospy.Subscriber('joy', Joy, node.joy_callback)
     node.publish()
     
     rospy.spin()
