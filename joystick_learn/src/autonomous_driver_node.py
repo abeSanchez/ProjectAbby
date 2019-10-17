@@ -2,6 +2,7 @@
 
 import rospy
 from geometry_msgs.msg import Twist
+from std_msgs.msg import Float32MultiArray
 from enum import Enum
 from keras.models import model_from_json
 import os
@@ -27,14 +28,26 @@ class AutononmousDriverNode:
     last_twist = Twist()
 
     def __init__(self):
+        self.set_pubs_and_subs()
+        self.load_models()
+
+    def set_pubs_and_subs(self):
         self.twist_pub = rospy.Publisher('autonomous_driver/drive_cmd', Twist, queue_size=10)
         self.twist_sub = rospy.Subscriber('joystick/drive_cmd', Twist, self.joystick_command_callback)
-        self.ultrasonic_sub = rospy.Subscriber('arduino/ultrasonic_ranges', MultiArray, self.perimeter_check)
-        
-        json_file = open('model.json', 'r')
+        self.ultrasonic_sub = rospy.Subscriber('arduino/ultrasonic_ranges', Float32MultiArray, self.perimeter_check)
+
+    def load_models():
+        # Load blocked model
+        json_file = open('blocked_model.json', 'r')
         loaded_model_json = json_file.read()
-        loaded_model = model_from_json(loaded_model_json)
-        loaded_model.load_weights('model.h5')
+        self.blocked_model = model_from_json(loaded_model_json)
+        self.blocked_model.load_weights('blocked_model.h5')
+
+        # Load orient model
+        json_file = open('orient_model.json', 'r')
+        loaded_model_json = json_file.read()
+        self.orient_model = model_from_json(loaded_model_json)
+        self.orient_model.load_weights('orient_model.h5')
 
     def perimeter_check(self, ultrasonic_ranges):
         if not self.perimeter_clear(ultrasonic_ranges):
