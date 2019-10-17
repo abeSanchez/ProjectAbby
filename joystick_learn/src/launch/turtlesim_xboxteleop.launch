@@ -4,4 +4,6 @@
         </node>
         <node name="turtlesim_node" pkg="turtlesim" type="turtlesim_node" output="screen" ></node>
         <node name="teleop_joy_node" pkg="joystick_learn" type="teleop_joy_node.py" output="screen" ></node>
+        <node name="autonomous_driver_node" pkg="joystick_learn" type="autonomous_driver_node.py" output="screen" ></node>
+        <node name="filter_node" pkg="joystick_learn" type="filter_node.py" output="screen" ></node>
 </launch>

@@ -3,6 +3,8 @@
 import rospy
 from geometry_msgs.msg import Twist
 from enum import Enum
+from keras.models import model_from_json
+import os
 
 class Modes(Enum):
     USER_MODE = 1
@@ -10,7 +12,7 @@ class Modes(Enum):
     AUTOPILOT_MODE = 3
     DATA_COLLECTION_MODE = 4
 
-class Autononmous:
+class AutononmousDriverNode:
     
     selected_mode = Modes.USER_MODE
 
@@ -19,21 +21,40 @@ class Autononmous:
     ultrasonic_sub = None
     depth_camera_sub = None
 
+    blocked_model = None
+    orient_model = None
+
     last_twist = Twist()
 
     def __init__(self):
-        self.twist_pub = rospy.Publisher('autonomous_driver/drive_cmd', Twist, queue_size=1)
+        self.twist_pub = rospy.Publisher('autonomous_driver/drive_cmd', Twist, queue_size=10)
         self.twist_sub = rospy.Subscriber('joystick/drive_cmd', Twist, self.joystick_command_callback)
+        self.ultrasonic_sub = rospy.Subscriber('arduino/ultrasonic_ranges', MultiArray, self.perimeter_check)
+        
+        json_file = open('model.json', 'r')
+        loaded_model_json = json_file.read()
+        loaded_model = model_from_json(loaded_model_json)
+        loaded_model.load_weights('model.h5')
+
+    def perimeter_check(self, ultrasonic_ranges):
+        if not self.perimeter_clear(ultrasonic_ranges):
+            self.selected_mode = Modes.USER_MODE
+
+    def perimeter_clear(self, ultrasonic_ranges):
+        for r in ultrasonic_ranges:
+            if r < ULTRASONIC_THRESH:
+                return False
+        return True
 
     def publish(self):
+        rate = rospy.Rate(30)
         while not rospy.is_shutdown():
             if self.selected_mode == Modes.USER_MODE:
                 self.twist_pub.publish(self.last_twist)
+            rate.sleep()
 
     # Pass through drive commands if in USER_MODE
     def joystick_command_callback(self, twist):
-        twist = Twist()
-        
         if self.selected_mode == Modes.USER_MODE:
             self.last_twist = twist
             self.twist_pub.publish(twist)

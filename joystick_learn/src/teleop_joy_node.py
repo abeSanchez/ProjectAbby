@@ -19,12 +19,14 @@ class TeleopJoyNode:
     last_twist = Twist()
 
     def __init__(self):
-        self.twist_pub = rospy.Publisher('turtle1/cmd_vel', Twist, queue_size=1)
+        self.twist_pub = rospy.Publisher('autonomous_driver/drive_cmd', Twist, queue_size=10)
         self.joy_sub = rospy.Subscriber('joy', Joy, self.joy_callback)
 
     def publish(self):
+        rate = rospy.Rate(30)
         while not rospy.is_shutdown():
             self.twist_pub.publish(self.last_twist)
+            rate.sleep()
 
     def joy_callback(self, joy_msg):
         twist = Twist()
@@ -39,7 +41,6 @@ class TeleopJoyNode:
             twist.angular.z = angular_z
         
         self.last_twist = twist
-        self.twist_pub.publish(twist)
 
 if __name__ == '__main__':
     rospy.init_node('teleop_joystick', log_level=rospy.DEBUG)
