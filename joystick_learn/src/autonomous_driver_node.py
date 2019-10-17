@@ -8,6 +8,8 @@ from enum import IntEnum
 from keras.models import model_from_json
 import os
 
+ULTRASONIC_THRESH = -0.5
+
 class Modes(IntEnum):
     USER_MODE = 1
     CRUISE_MODE = 2
@@ -60,7 +62,7 @@ class AutononmousDriverNode:
             self.selected_mode = Modes.USER_MODE
 
     def perimeter_clear(self, ultrasonic_ranges):
-        for r in ultrasonic_ranges:
+        for r in ultrasonic_ranges.data:
             if r < ULTRASONIC_THRESH:
                 return False
         return True

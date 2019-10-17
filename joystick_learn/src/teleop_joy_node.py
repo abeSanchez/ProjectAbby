@@ -42,11 +42,17 @@ class TeleopJoyNode:
         twist = Twist()
         mode = Int32()
 
-        if joy_msg.buttons[0] == 1:
+        if joy_msg.buttons[0] == 1: # X button
             mode.data = int(Modes.AUTOPILOT_MODE)
             self.mode_pub.publish(mode)
-        if joy_msg.buttons[2] == 1:
+        if joy_msg.buttons[2] == 1: # A button
             mode.data = int(Modes.USER_MODE)
+            self.mode_pub.publish(mode)
+        if joy_msg.buttons[3] == 1: # Y button
+            mode.data = int(Modes.CRUISE_MODE)
+            self.mode_pub.publish(mode)
+        if joy_msg.buttons[1] == 1: # B button
+            mode.data = int(Modes.DATA_COLLECTION_MODE)
             self.mode_pub.publish(mode)
 
         linear_x = -(joy_msg.axes[LINEAR_AXIS] - 1) / 2
