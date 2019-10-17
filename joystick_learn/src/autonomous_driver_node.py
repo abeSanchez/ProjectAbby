@@ -3,11 +3,12 @@
 import rospy
 from geometry_msgs.msg import Twist
 from std_msgs.msg import Float32MultiArray
-from enum import Enum
+from std_msgs.msg import Int32
+from enum import IntEnum
 from keras.models import model_from_json
 import os
 
-class Modes(Enum):
+class Modes(IntEnum):
     USER_MODE = 1
     CRUISE_MODE = 2
     AUTOPILOT_MODE = 3
@@ -21,6 +22,7 @@ class AutononmousDriverNode:
     twist_sub = None
     ultrasonic_sub = None
     depth_camera_sub = None
+    mode_sub = None
 
     blocked_model = None
     orient_model = None
@@ -29,14 +31,18 @@ class AutononmousDriverNode:
 
     def __init__(self):
         self.set_pubs_and_subs()
-        self.load_models()
+        #self.load_models()
 
     def set_pubs_and_subs(self):
         self.twist_pub = rospy.Publisher('autonomous_driver/drive_cmd', Twist, queue_size=10)
         self.twist_sub = rospy.Subscriber('joystick/drive_cmd', Twist, self.joystick_command_callback)
         self.ultrasonic_sub = rospy.Subscriber('arduino/ultrasonic_ranges', Float32MultiArray, self.perimeter_check)
+        self.mode_sub = rospy.Subscriber('joystick/mode', Int32, self.change_mode)
 
-    def load_models():
+    def change_mode(self, mode):
+        self.selected_mode = mode.data
+
+    def load_models(self):
         # Load blocked model
         json_file = open('blocked_model.json', 'r')
         loaded_model_json = json_file.read()
