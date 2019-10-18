@@ -28,7 +28,7 @@ void loop()
   ultrasonic_pub.publish( &ultrasonic_ranges );
   nh.subscribe(command_sub);
   nh.spinOnce();
-  delay(1000);
+  delay(10);
 }
 
 void fillRanges() {
