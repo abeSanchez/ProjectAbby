@@ -22,30 +22,21 @@ void setDriveCommand(const geometry_msgs::Twist& command) {
 ros::Publisher ultrasonic_pub("arduino/ultrasonic_ranges", &ultrasonic_ranges);
 ros::Subscriber<geometry_msgs::Twist> command_sub("turtle1/cmd_vel", &setDriveCommand);
 
+int measureDistance(int tPin, int ePin) {
+  digitalWrite(tPin, LOW);
+  delayMicroseconds(2);
+  
+  digitalWrite(tPin, HIGH);
+  delayMicroseconds(10);
+  
+  digitalWrite(tPin, LOW);
+
+  return pulseIn(ePin, HIGH) * 0.01715;
+}
+
 void fillRanges() {
-  digitalWrite(trigPin0, LOW);
-  delayMicroseconds(2);
-  
-  digitalWrite(trigPin0, HIGH);
-  delayMicroseconds(10);
-  
-  digitalWrite(trigPin0, LOW);
-
-  duration = pulseIn(echoPin0, HIGH);
-  ultrasonic_ranges.data[0] = duration * 0.034 / 2;
-  
-  digitalWrite(trigPin1, LOW);
-  delayMicroseconds(2);
-  
-  digitalWrite(trigPin1, HIGH);
-  delayMicroseconds(10);
-  
-  digitalWrite(trigPin1, LOW);
-
-  duration = pulseIn(echoPin1, HIGH);
-  ultrasonic_ranges.data[1] = duration * 0.034 / 2;
-
-  
+  ultrasonic_ranges.data[0] = measureDistance(trigPin0, echoPin0);
+  ultrasonic_ranges.data[1] = measureDistance(trigPin1, echoPin1);
   ultrasonic_ranges.data[2] = 100;
   ultrasonic_ranges.data[3] = 100;
   ultrasonic_ranges.data[4] = 100;
