@@ -2,13 +2,13 @@
 
 import rospy
 from geometry_msgs.msg import Twist
-from std_msgs.msg import Float32MultiArray
+from std_msgs.msg import Int32MultiArray
 from std_msgs.msg import Int32
 from enum import IntEnum
 from keras.models import model_from_json
 import os
 
-ULTRASONIC_THRESH = -0.5
+ULTRASONIC_THRESH = 10
 
 class Modes(IntEnum):
     USER_MODE = 1
@@ -25,6 +25,7 @@ class AutononmousDriverNode:
     ultrasonic_sub = None
     depth_camera_sub = None
     mode_sub = None
+    mode_pub = None
 
     blocked_model = None
     orient_model = None
@@ -38,8 +39,9 @@ class AutononmousDriverNode:
     def set_pubs_and_subs(self):
         self.twist_pub = rospy.Publisher('autonomous_driver/drive_cmd', Twist, queue_size=10)
         self.twist_sub = rospy.Subscriber('joystick/drive_cmd', Twist, self.joystick_command_callback)
-        self.ultrasonic_sub = rospy.Subscriber('arduino/ultrasonic_ranges', Float32MultiArray, self.perimeter_check)
+        self.ultrasonic_sub = rospy.Subscriber('arduino/ultrasonic_ranges', Int32MultiArray, self.perimeter_check)
         self.mode_sub = rospy.Subscriber('joystick/mode', Int32, self.change_mode)
+        self.mode_pub = rospy.Publisher('joystick/mode', Int32, queue_size=10)
 
     def change_mode(self, mode):
         self.selected_mode = mode.data
@@ -60,6 +62,9 @@ class AutononmousDriverNode:
     def perimeter_check(self, ultrasonic_ranges):
         if not self.perimeter_clear(ultrasonic_ranges):
             self.selected_mode = Modes.USER_MODE
+            mode = Int32()
+            mode.data = int(Modes.USER_MODE)
+            self.mode_pub.publish(mode)
 
     def perimeter_clear(self, ultrasonic_ranges):
         for r in ultrasonic_ranges.data:
