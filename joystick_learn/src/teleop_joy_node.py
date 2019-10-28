@@ -3,6 +3,8 @@
 import rospy
 from geometry_msgs.msg import Twist
 from std_msgs.msg import Int32
+from std_msgs.msg import Bool
+from std_msgs.msg import Empty
 from sensor_msgs.msg import Joy
 from enum import IntEnum
 
@@ -24,23 +26,34 @@ class TeleopJoyNode:
     
     twist_pub = None
     mode_pub = None
+    blocked_pub = None
+    right_pub = None
+    save_pub = None
     joy_sub = None
     last_twist = Twist()
+    last_joy = None
+
+    reverse_selected = False
 
     def __init__(self):
         self.twist_pub = rospy.Publisher('joystick/drive_cmd', Twist, queue_size=10)
         self.mode_pub = rospy.Publisher('joystick/mode', Int32, queue_size=10)
+        self.blocked_pub = rospy.Publisher('joystick/blocked', Bool, queue_size=10)
+        self.right_pub = rospy.Publisher('joystick/right', Bool, queue_size=10)
+        self.save_pub = rospy.Publisher('joystick/save', Empty, queue_size=10)
         self.joy_sub = rospy.Subscriber('joy', Joy, self.joy_callback)
 
     def publish(self):
         rate = rospy.Rate(30)
         while not rospy.is_shutdown():
-            self.twist_pub.publish(self.last_twist)
+            #self.twist_pub.publish(self.last_twist)
             rate.sleep()
 
     def joy_callback(self, joy_msg):
         twist = Twist()
         mode = Int32()
+        blocked = Bool()
+        right = Bool()
 
         if joy_msg.buttons[0] == 1: # X button
             mode.data = int(Modes.AUTOPILOT_MODE)
@@ -55,16 +68,39 @@ class TeleopJoyNode:
             mode.data = int(Modes.DATA_COLLECTION_MODE)
             self.mode_pub.publish(mode)
 
+        if self.last_joy != None and self.last_joy.buttons[4] == 0 and joy_msg.buttons[4] == 1: # LB button
+            blocked.data = False
+            self.blocked_pub.publish(blocked)
+        if self.last_joy != None and self.last_joy.buttons[6] == 0 and joy_msg.buttons[6] == 1: # Back button
+            blocked.data = True
+            self.blocked_pub.publish(blocked)
+        if self.last_joy != None and self.last_joy.buttons[8] == 0 and joy_msg.buttons[8] == 1: # Power button
+            right.data = False
+            self.right_pub.publish(right)
+        if self.last_joy != None and self.last_joy.buttons[7] == 0 and joy_msg.buttons[7] == 1: # Start button
+            right.data = True
+            self.right_pub.publish(right)
+        if self.last_joy != None and self.last_joy.axes[7] == 0 and joy_msg.axes[7] == -1: # D-Down button
+            self.save_pub.publish(Empty())
+
         linear_x = -(joy_msg.axes[LINEAR_AXIS] - 1) / 2
         angular_z = ANGULAR_SCALE * joy_msg.axes[ANGULAR_AXIS]
 
+        if self.last_joy != None and self.last_joy.buttons[5] == 0 and joy_msg.buttons[5] == 1 and linear_x == 0: # RB button
+            self.reverse_selected = not self.reverse_selected
+
         if linear_x > GATE_THRESH:
-            twist.linear.x = linear_x
+            if self.reverse_selected:
+                twist.linear.x = -linear_x
+            else:
+                twist.linear.x = linear_x
         
         if abs(angular_z) > GATE_THRESH:
             twist.angular.z = angular_z
         
         self.last_twist = twist
+        self.last_joy = joy_msg
+        self.twist_pub.publish(self.last_twist)
 
 if __name__ == '__main__':
     rospy.init_node('teleop_joystick', log_level=rospy.DEBUG)
