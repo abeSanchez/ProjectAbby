@@ -39,21 +39,21 @@ class TeleopJoyNode:
         self.twist_pub = rospy.Publisher('joystick/drive_cmd', Twist, queue_size=10)
         self.mode_pub = rospy.Publisher('joystick/mode', Int32, queue_size=10)
         self.blocked_pub = rospy.Publisher('joystick/blocked', Bool, queue_size=10)
-        self.right_pub = rospy.Publisher('joystick/right', Bool, queue_size=10)
+        self.right_pub = rospy.Publisher('joystick/right', Int32, queue_size=10)
         self.save_pub = rospy.Publisher('joystick/save', Empty, queue_size=10)
         self.joy_sub = rospy.Subscriber('joy', Joy, self.joy_callback)
 
     def publish(self):
         rate = rospy.Rate(30)
         while not rospy.is_shutdown():
-            #self.twist_pub.publish(self.last_twist)
+            self.twist_pub.publish(self.last_twist)
             rate.sleep()
 
     def joy_callback(self, joy_msg):
         twist = Twist()
         mode = Int32()
         blocked = Bool()
-        right = Bool()
+        right = Int32()
 
         if joy_msg.buttons[0] == 1: # X button
             mode.data = int(Modes.AUTOPILOT_MODE)
@@ -75,10 +75,13 @@ class TeleopJoyNode:
             blocked.data = True
             self.blocked_pub.publish(blocked)
         if self.last_joy != None and self.last_joy.buttons[8] == 0 and joy_msg.buttons[8] == 1: # Power button
-            right.data = False
+            right.data = 0
             self.right_pub.publish(right)
         if self.last_joy != None and self.last_joy.buttons[7] == 0 and joy_msg.buttons[7] == 1: # Start button
-            right.data = True
+            right.data = 1
+            self.right_pub.publish(right)
+        if self.last_joy != None and self.last_joy.buttons[10] == 0 and joy_msg.buttons[10] == 1: # Right Stick button
+            right.data = -1
             self.right_pub.publish(right)
         if self.last_joy != None and self.last_joy.axes[7] == 0 and joy_msg.axes[7] == -1: # D-Down button
             self.save_pub.publish(Empty())
@@ -96,7 +99,7 @@ class TeleopJoyNode:
                 twist.linear.x = linear_x
         
         if abs(angular_z) > GATE_THRESH:
-            twist.angular.z = angular_z
+            twist.angular.z = -angular_z
         
         self.last_twist = twist
         self.last_joy = joy_msg

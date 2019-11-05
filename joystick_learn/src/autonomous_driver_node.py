@@ -45,9 +45,11 @@ class AutononmousDriverNode:
     last_twist = Twist()
     last_gps = NavSatFix()
     last_image = []
+    last_was_blocked = False
+    last_orient_direction = False
 
     blocked_sub = None
-    right_sub = None
+    right_sub = 0
     save_sub = None
     data_collection_is_blocked = False
     data_collection_is_right = False
@@ -56,7 +58,7 @@ class AutononmousDriverNode:
 
     def __init__(self):
         self.set_pubs_and_subs()
-        #self.load_models()
+        self.load_models()
         self.last_gps.latitude = 28.603882
         self.last_gps.longitude = -81.199260
 
@@ -68,7 +70,7 @@ class AutononmousDriverNode:
         self.mode_sub = rospy.Subscriber('joystick/mode', Int32, self.change_mode)
         self.mode_pub = rospy.Publisher('joystick/mode', Int32, queue_size=10)
         self.blocked_sub = rospy.Subscriber('joystick/blocked', Bool, self.change_blocked)
-        self.right_sub = rospy.Subscriber('joystick/right', Bool, self.change_right)
+        self.right_sub = rospy.Subscriber('joystick/right', Int32, self.change_right)
         self.save_sub = rospy.Subscriber('joystick/save', Empty, self.save_image)
         self.gps_pub = rospy.Publisher('gps', NavSatFix, queue_size=10)
 
@@ -79,12 +81,12 @@ class AutononmousDriverNode:
         self.data_collection_is_right = right.data
 
     def depth_callback(self, data):
-        image = self.bridge.imgmsg_to_cv2(data, "mono16")
+        image = self.bridge.imgmsg_to_cv2(data, data.encoding)
         
         scale_factor = 20
         dim = (scale_factor, scale_factor) 
 
-        resized = block_reduce(image, block_size=dim, func=np.min)
+        resized = block_reduce(image, block_size=dim, func=np.max)
 
         self.last_image = resized
 
@@ -100,10 +102,12 @@ class AutononmousDriverNode:
         if self.data_collection_is_blocked:
             path = path + 'blocked/'
 
-            if self.data_collection_is_right:
+            if self.data_collection_is_right == 1:
                 path = path + 'right/'
-            else:
+            elif self.data_collection_is_right == 0:
                 path = path + 'left/'
+            else:
+                path = path + 'both/'
         else:
             path = path + 'unblocked/'
 
@@ -113,7 +117,40 @@ class AutononmousDriverNode:
         rospy.loginfo("Image saved: " + path + " " + str(result))
 
     def cruise(self):
-        return
+        rospy.loginfo('cruising')
+        blocked_prediction = self.blocked_model.predict(self.last_image.reshape(1,24,38,1))[0]
+
+        twist = Twist()
+
+        twist.linear.x = 0.75
+
+        if blocked_prediction <= 0.5:
+            self.last_was_blocked = False
+
+            twist.angular.z = 0
+
+            self.last_twist = twist
+
+            return
+
+        if self.last_was_blocked:
+            return
+
+        self.last_was_blocked = True
+
+        orient_direction = self.orient_model.predict(self.last_image.reshape(1,24,38,1))[0]
+
+        if orient_direction <= 0.5:
+            twist.angular.z = -1
+
+            self.last_twist = twist
+        else:
+            twist.angular.z = 1
+
+            self.last_twist = twist
+
+        self.last_orient_direction = orient_direction
+
 
     def autopilot(self):
         return
@@ -124,16 +161,18 @@ class AutononmousDriverNode:
 
     def load_models(self):
         # Load blocked model
-        json_file = open('blocked_model.json', 'r')
+        json_file = open('models1/blocked_model.json', 'r')
         loaded_model_json = json_file.read()
         self.blocked_model = model_from_json(loaded_model_json)
-        self.blocked_model.load_weights('blocked_model.h5')
+        self.blocked_model.load_weights('models1/blocked_model.h5')
 
         # Load orient model
-        json_file = open('orient_model.json', 'r')
+        json_file = open('models1/orient_model.json', 'r')
         loaded_model_json = json_file.read()
         self.orient_model = model_from_json(loaded_model_json)
-        self.orient_model.load_weights('orient_model.h5')
+        self.orient_model.load_weights('models1/orient_model.h5')
+
+        json_file.close()
 
     def perimeter_check(self, ultrasonic_ranges):
         if not self.perimeter_clear(ultrasonic_ranges):
@@ -151,23 +190,14 @@ class AutononmousDriverNode:
     def publish(self):
         rate = rospy.Rate(30)
         while not rospy.is_shutdown():
-            if self.selected_mode == Modes.USER_MODE or self.selected_mode == Modes.DATA_COLLECTION_MODE:
-                self.twist_pub.publish(self.last_twist)
-            # if self.selected_mode == Modes.CRUISE_MODE:
-            #     self.cruise()
-            # if self.selected_mode == Modes.AUTOPILOT_MODE:
-            #     self.autopilot()
-
-            self.last_gps.latitude = self.last_gps.latitude + 0.000001
-            self.gps_pub.publish(self.last_gps)
-            
+            self.twist_pub.publish(self.last_twist)
             rate.sleep()
 
     def joystick_command_callback(self, twist):
         # Pass through drive commands if in USER_MODE
         if self.selected_mode == Modes.USER_MODE or self.selected_mode == Modes.DATA_COLLECTION_MODE:
+            self.last_was_blocked = False
             self.last_twist = twist
-            #self.twist_pub.publish(twist)
 
 if __name__ == '__main__':
     rospy.init_node('autonomous_driver', log_level=rospy.DEBUG)
