@@ -10,10 +10,10 @@ from std_msgs.msg import Empty
 from sensor_msgs.msg import NavSatFix
 from sensor_msgs.msg import Image
 from enum import IntEnum
-from keras.models import model_from_json
+#from keras.models import model_from_json
 from datetime import datetime
 from cv_bridge import CvBridge, CvBridgeError
-from skimage.measure import block_reduce
+#from skimage.measure import block_reduce
 import cv2
 import numpy as np
 import os
@@ -119,21 +119,21 @@ class AutononmousDriverNode:
         return
 
     def change_mode(self, mode):
-        rospy.loginfo("Mode changed: " + str(mode.data))
+        #rospy.loginfo("Mode changed: " + str(mode.data))
         self.selected_mode = mode.data
 
-    def load_models(self):
-        # Load blocked model
-        json_file = open('blocked_model.json', 'r')
-        loaded_model_json = json_file.read()
-        self.blocked_model = model_from_json(loaded_model_json)
-        self.blocked_model.load_weights('blocked_model.h5')
+    # def load_models(self):
+    #     # Load blocked model
+    #     json_file = open('blocked_model.json', 'r')
+    #     loaded_model_json = json_file.read()
+    #     self.blocked_model = model_from_json(loaded_model_json)
+    #     self.blocked_model.load_weights('blocked_model.h5')
 
-        # Load orient model
-        json_file = open('orient_model.json', 'r')
-        loaded_model_json = json_file.read()
-        self.orient_model = model_from_json(loaded_model_json)
-        self.orient_model.load_weights('orient_model.h5')
+    #     # Load orient model
+    #     json_file = open('orient_model.json', 'r')
+    #     loaded_model_json = json_file.read()
+    #     self.orient_model = model_from_json(loaded_model_json)
+    #     self.orient_model.load_weights('orient_model.h5')
 
     def perimeter_check(self, ultrasonic_ranges):
         if not self.perimeter_clear(ultrasonic_ranges):

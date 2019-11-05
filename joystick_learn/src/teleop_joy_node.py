@@ -8,7 +8,7 @@ from std_msgs.msg import Empty
 from sensor_msgs.msg import Joy
 from enum import IntEnum
 
-LINEAR_AXIS = 5
+LINEAR_AXIS = 4
 ANGULAR_AXIS = 0
     
 LINEAR_SCALE = 1
@@ -46,7 +46,7 @@ class TeleopJoyNode:
     def publish(self):
         rate = rospy.Rate(30)
         while not rospy.is_shutdown():
-            #self.twist_pub.publish(self.last_twist)
+            self.twist_pub.publish(self.last_twist)
             rate.sleep()
 
     def joy_callback(self, joy_msg):
