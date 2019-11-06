@@ -10,10 +10,10 @@ from std_msgs.msg import Empty
 from sensor_msgs.msg import NavSatFix
 from sensor_msgs.msg import Image
 from enum import IntEnum
-from keras.models import model_from_json
+#from keras.models import model_from_json
 from datetime import datetime
 from cv_bridge import CvBridge, CvBridgeError
-from skimage.measure import block_reduce
+#from skimage.measure import block_reduce
 import cv2
 import numpy as np
 import os
@@ -86,7 +86,7 @@ class AutononmousDriverNode:
         scale_factor = 20
         dim = (scale_factor, scale_factor) 
 
-        resized = block_reduce(image, block_size=dim, func=np.max)
+        resized = image # block_reduce(image, block_size=dim, func=np.max)
 
         self.last_image = resized
 
@@ -107,7 +107,7 @@ class AutononmousDriverNode:
             elif self.data_collection_is_right == 0:
                 path = path + 'left/'
             else:
-                path = path + 'both/'
+                path = path + 'either/'
         else:
             path = path + 'unblocked/'
 
@@ -160,19 +160,20 @@ class AutononmousDriverNode:
         self.selected_mode = mode.data
 
     def load_models(self):
+        return
         # Load blocked model
-        json_file = open('models1/blocked_model.json', 'r')
-        loaded_model_json = json_file.read()
-        self.blocked_model = model_from_json(loaded_model_json)
-        self.blocked_model.load_weights('models1/blocked_model.h5')
+        # json_file = open('models1/blocked_model.json', 'r')
+        # loaded_model_json = json_file.read()
+        # self.blocked_model = model_from_json(loaded_model_json)
+        # self.blocked_model.load_weights('models1/blocked_model.h5')
 
-        # Load orient model
-        json_file = open('models1/orient_model.json', 'r')
-        loaded_model_json = json_file.read()
-        self.orient_model = model_from_json(loaded_model_json)
-        self.orient_model.load_weights('models1/orient_model.h5')
+        # # Load orient model
+        # json_file = open('models1/orient_model.json', 'r')
+        # loaded_model_json = json_file.read()
+        # self.orient_model = model_from_json(loaded_model_json)
+        # self.orient_model.load_weights('models1/orient_model.h5')
 
-        json_file.close()
+        # json_file.close()
 
     def perimeter_check(self, ultrasonic_ranges):
         if not self.perimeter_clear(ultrasonic_ranges):
@@ -195,7 +196,7 @@ class AutononmousDriverNode:
 
     def joystick_command_callback(self, twist):
         # Pass through drive commands if in USER_MODE
-        if self.selected_mode == Modes.USER_MODE or self.selected_mode == Modes.DATA_COLLECTION_MODE:
+        if self.selected_mode == Modes.USER_MODE:
             self.last_was_blocked = False
             self.last_twist = twist
 

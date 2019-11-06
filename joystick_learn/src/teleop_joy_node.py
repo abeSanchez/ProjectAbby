@@ -8,13 +8,13 @@ from std_msgs.msg import Empty
 from sensor_msgs.msg import Joy
 from enum import IntEnum
 
-LINEAR_AXIS = 5
+LINEAR_AXIS = 4
 ANGULAR_AXIS = 0
     
 LINEAR_SCALE = 1
 ANGULAR_SCALE = 1
 
-GATE_THRESH = 0.1
+GATE_THRESH = 0.05
 
 class Modes(IntEnum):
     USER_MODE = 1
@@ -55,39 +55,33 @@ class TeleopJoyNode:
         blocked = Bool()
         right = Int32()
 
-        if joy_msg.buttons[0] == 1: # X button
-            mode.data = int(Modes.AUTOPILOT_MODE)
-            self.mode_pub.publish(mode)
-        if joy_msg.buttons[2] == 1: # A button
+        if joy_msg.buttons[3] == 1: # A button
             mode.data = int(Modes.USER_MODE)
             self.mode_pub.publish(mode)
-        if joy_msg.buttons[3] == 1: # Y button
+        if joy_msg.buttons[1] == 1: # Y button
             mode.data = int(Modes.CRUISE_MODE)
             self.mode_pub.publish(mode)
-        if joy_msg.buttons[1] == 1: # B button
-            mode.data = int(Modes.DATA_COLLECTION_MODE)
-            self.mode_pub.publish(mode)
 
-        if self.last_joy != None and self.last_joy.buttons[4] == 0 and joy_msg.buttons[4] == 1: # LB button
+        if self.last_joy != None and self.last_joy.buttons[6] == 0 and joy_msg.buttons[6] == 1: # LB button
             blocked.data = False
             self.blocked_pub.publish(blocked)
-        if self.last_joy != None and self.last_joy.buttons[6] == 0 and joy_msg.buttons[6] == 1: # Back button
+        if self.last_joy != None and self.last_joy.buttons[7] == 0 and joy_msg.buttons[7] == 1: # Back button
             blocked.data = True
             self.blocked_pub.publish(blocked)
-        if self.last_joy != None and self.last_joy.buttons[8] == 0 and joy_msg.buttons[8] == 1: # Power button
+        if self.last_joy != None and self.last_joy.buttons[2] == 0 and joy_msg.buttons[2] == 1: # Power button
             right.data = 0
             self.right_pub.publish(right)
-        if self.last_joy != None and self.last_joy.buttons[7] == 0 and joy_msg.buttons[7] == 1: # Start button
+        if self.last_joy != None and self.last_joy.buttons[0] == 0 and joy_msg.buttons[0] == 1: # Start button
             right.data = 1
             self.right_pub.publish(right)
-        if self.last_joy != None and self.last_joy.buttons[10] == 0 and joy_msg.buttons[10] == 1: # Right Stick button
+        if self.last_joy != None and self.last_joy.buttons[9] == 0 and joy_msg.buttons[9] == 1: # Right Stick button
             right.data = -1
             self.right_pub.publish(right)
         if self.last_joy != None and self.last_joy.axes[7] == 0 and joy_msg.axes[7] == -1: # D-Down button
             self.save_pub.publish(Empty())
 
         linear_x = -(joy_msg.axes[LINEAR_AXIS] - 1) / 2
-        angular_z = ANGULAR_SCALE * joy_msg.axes[ANGULAR_AXIS]
+        angular_z = -ANGULAR_SCALE * joy_msg.axes[ANGULAR_AXIS]
 
         if self.last_joy != None and self.last_joy.buttons[5] == 0 and joy_msg.buttons[5] == 1 and linear_x == 0: # RB button
             self.reverse_selected = not self.reverse_selected
