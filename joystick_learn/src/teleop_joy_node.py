@@ -93,7 +93,7 @@ class TeleopJoyNode:
                 twist.linear.x = linear_x
         
         if abs(angular_z) > GATE_THRESH:
-            twist.angular.z = -angular_z
+            twist.angular.z = angular_z
         
         self.last_twist = twist
         self.last_joy = joy_msg
