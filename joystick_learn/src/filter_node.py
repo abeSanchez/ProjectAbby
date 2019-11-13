@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import rospy
 from geometry_msgs.msg import Twist
@@ -23,7 +23,7 @@ class FilterNode:
     def autonomous_command_callback(self, twist):
         new_twist = Twist()
 
-        last_weight = 0.80
+        last_weight = 0.01
 
         new_twist.linear.x = self.last_twist.linear.x * last_weight + twist.linear.x * (1 - last_weight)
 

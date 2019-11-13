@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import rospy
 import roslib
@@ -10,7 +10,7 @@ from std_msgs.msg import Empty
 from sensor_msgs.msg import NavSatFix
 from sensor_msgs.msg import Image
 from enum import IntEnum
-#from keras.models import model_from_json
+from keras.models import model_from_json
 from datetime import datetime
 from cv_bridge import CvBridge, CvBridgeError
 #from skimage.measure import block_reduce
@@ -18,7 +18,7 @@ import cv2
 import numpy as np
 import os
 
-ULTRASONIC_THRESH = 10
+ULTRASONIC_THRESH = 150
 
 class Modes(IntEnum):
     USER_MODE = 1

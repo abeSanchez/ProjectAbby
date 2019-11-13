@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import rospy
 from geometry_msgs.msg import Twist
@@ -12,7 +12,7 @@ LINEAR_AXIS = 4
 ANGULAR_AXIS = 0
     
 LINEAR_SCALE = 1
-ANGULAR_SCALE = 1
+ANGULAR_SCALE = 0.5
 
 GATE_THRESH = 0.05
 
