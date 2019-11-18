@@ -10,7 +10,7 @@ from std_msgs.msg import Empty
 from sensor_msgs.msg import NavSatFix
 from sensor_msgs.msg import Image
 from enum import IntEnum
-from keras.models import model_from_json
+#from keras.models import model_from_json
 from datetime import datetime
 from cv_bridge import CvBridge, CvBridgeError
 #from skimage.measure import block_reduce
@@ -176,7 +176,7 @@ class AutononmousDriverNode:
         # json_file.close()
 
     def perimeter_check(self, ultrasonic_ranges):
-        if not self.perimeter_clear(ultrasonic_ranges):
+        if not self.perimeter_clear(ultrasonic_ranges) and self.selected_mode == Modes.CRUISE_MODE:
             self.selected_mode = Modes.USER_MODE
             mode = Int32()
             mode.data = int(Modes.USER_MODE)

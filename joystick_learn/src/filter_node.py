@@ -23,7 +23,7 @@ class FilterNode:
     def autonomous_command_callback(self, twist):
         new_twist = Twist()
 
-        last_weight = 0.01
+        last_weight = 0.0
 
         new_twist.linear.x = self.last_twist.linear.x * last_weight + twist.linear.x * (1 - last_weight)
 
